@@ -13,14 +13,18 @@ logger = logging.getLogger(str(uuid.uuid4()))
 logger.setLevel(logging.DEBUG)
 fh = logging.FileHandler('qlik_task_start.log')
 fh.setLevel(logging.DEBUG)
-ch = logging.StreamHandler()
+ch = logging.StreamHandler(sys.stdout)
 ch.setLevel(logging.DEBUG)
+err = logging.StreamHandler(sys.stderr)
+err.setLevel(logging.ERROR)
 #logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 formatter = logging.Formatter('%(asctime)s	%(name)s	%(levelname)s	%(message)s')
 fh.setFormatter(formatter)
 ch.setFormatter(formatter)
+err.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
+logger.addHandler(err)
 
 logger.info('Starting qlik_task_start.py')
 
@@ -81,7 +85,11 @@ qrs = qrspy.ConnectQlik(
 
 #Check whether connect worked, if exception caught, log error and exit
 try:
-	qrs.get_about()
+	about = qrs.get_about()
+	if about is None:
+		logger.error("Qlik QRS API connection failure")
+		sys.exit(1)
+	
 except: # catch *all* exceptions
 	e = sys.exc_info()[0]
 	logger.error('Qlik QRS API connection failure: {}'.format(e))
